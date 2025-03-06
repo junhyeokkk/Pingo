@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.pingo.mapper.CommunityMapper">
+
+    <!-- 정렬 기준에 따라 장소 리뷰 조회 -->
+    <select id="selectPlaceReviewWithSort" parameterType="map" resultType="com.pingo.dto.community.PlaceReviewDTO">
+        SELECT * FROM
+        (
+            SELECT PR.*, UR."userNick", UI."imageUrl" FROM "placeReview" PR
+            JOIN "users" UR
+            ON PR."userNo" = UR."userNo"
+            JOIN "userImage" UI
+            ON PR."userNo" = UI."userNo"
+            WHERE PR."category" = #{cateSort}
+            AND UI."imageProfile" = 'T'
+            <trim prefix="ORDER BY" prefixOverrides=",">
+                <if test="searchSort.equals('popular')">
+                    PR."heart" DESC
+                </if>
+                <if test="searchSort.equals('newest')">
+                    PR."regDate" DESC
+                </if>
+                <if test="searchSort == null or searchSort == ''">
+                    PR."heart" DESC  <!-- 기본 정렬 -->
+                </if>
+            </trim>
+        )
+        WHERE ROWNUM &lt;= 10
+    </select>
+
+    <!-- 정렬로 PlaceReview 조회 with location -->
+    <select id="selectPlaceReviewWithLocation" parameterType="map" resultType="com.pingo.dto.community.PlaceReviewDTO">
+        SELECT * FROM (
+            SELECT PR.*, UR."userNick", UI."imageUrl",
+            (6371 * ACOS(
+                COS(TO_NUMBER(#{latitude}) * (3.14159265358979 / 180)) *
+                COS(TO_NUMBER("latitude") * (3.14159265358979 / 180)) *
+                COS(TO_NUMBER("longitude") * (3.14159265358979 / 180) - TO_NUMBER(#{longitude}) * (3.14159265358979 / 180)) +
+                SIN(TO_NUMBER(#{latitude}) * (3.14159265358979 / 180)) *
+                SIN(TO_NUMBER("latitude") * (3.14159265358979 / 180))
+                )
+            ) AS distance
+            FROM "placeReview" PR
+            JOIN "users" UR
+            ON PR."userNo" = UR."userNo"
+            JOIN "userImage" UI
+            ON PR."userNo" = UI."userNo"
+            WHERE PR."category" = #{cateSort}
+            AND UI."imageProfile" = 'T'
+            ORDER BY distance
+        )
+        WHERE ROWNUM &lt;= 10
+    </select>
+
+
+    <!-- 검색어로 장소 리뷰 조회 -->
+    <select id="selectPlaceReviewWithKeyword" parameterType="map" resultType="com.pingo.dto.community.PlaceReviewDTO">
+        SELECT PR.*, UR."userNick", UI."imageUrl" FROM "placeReview" PR
+        JOIN "users" UR
+        ON PR."userNo" = UR."userNo"
+        JOIN "userImage" UI
+        ON PR."userNo" = UI."userNo"
+        WHERE PR."addressName" = #{keyword}
+        AND UI."imageProfile" = 'T'
+    </select>
+
+    <!-- 장소 리뷰 삽입 -->
+    <insert id="insertPlaceReview" parameterType="com.pingo.entity.community.PlaceReview">
+        INSERT INTO "placeReview" ("prNo", "placeName", "thumb", "addressName", "roadAddressName", "userNo", "contents", "category", "latitude", "longitude", "heart")
+        VALUES (#{prNo}, #{placeName}, #{thumb}, #{addressName}, #{roadAddressName}, #{userNo}, #{contents}, #{category}, #{latitude}, #{longitude}, #{heart})
+    </insert>
+
+    <!-- 장소 리뷰 조회 (name & address) -->
+    <select id="selectPlaceReviewForChat" resultType="com.pingo.entity.community.PlaceReview">
+        SELECT * FROM "placeReview"
+        WHERE "placeName" = #{placeName}
+        AND "addressName" = #{placeAddress}
+    </select>
+
+    <!-- 장소 리뷰 좋아요 처리 -->
+    <select id="selectPlaceHeart" parameterType="map" resultType="string">
+        SELECT "prNoStr" FROM "placeReviewHeart"
+        WHERE "userNo" = #{userNo}
+    </select>
+
+    <update id="placeDecreaseHeart" parameterType="map">
+        UPDATE "placeReview" SET "heart" = "heart" - 1
+        WHERE "prNo" = #{prNo}
+    </update>
+
+    <update id="placeIncreaseHeart" parameterType="map">
+        UPDATE "placeReview" SET "heart" = "heart" + 1
+        WHERE "prNo" = #{prNo}
+    </update>
+
+    <delete id="deletePlaceReviewHeart" parameterType="map">
+        DELETE FROM "placeReviewHeart" WHERE "userNo" = #{userNo}
+    </delete>
+
+    <select id="updatePlaceReviewHeart" parameterType="map">
+        UPDATE "placeReviewHeart" SET "prNoStr" = #{prNoStr}
+        WHERE "userNo" = #{userNo}
+    </select>
+
+    <select id="insertPlaceReviewHeart" parameterType="map">
+        INSERT INTO "placeReviewHeart" ("userNo", "prNoStr") VALUES (#{userNo}, #{prNoStr})
+    </select>
+
+    <!-- DatingGuide 최초 조회 -->
+    <select id="selectDatingGuideForInit" resultType="com.pingo.dto.community.DatingGuideDTO">
+        WITH RankedDatingGuide AS (
+            SELECT "dgNo", "title", "contents", "thumb", "userNo", "heart", "regDate", "category",
+            ROW_NUMBER() OVER (PARTITION BY "category" ORDER BY "heart" DESC) AS rank
+            FROM "datingGuide"
+        )
+        SELECT RDG."dgNo", RDG."title", RDG."contents", RDG."thumb", RDG."userNo", RDG."heart", RDG."regDate",
+        DGC."cateName", RDG."category" AS "cateNo", US."userName", UI."imageUrl"
+        FROM RankedDatingGuide RDG
+        JOIN "users" US ON RDG."userNo" = US."userNo"
+        JOIN "userImage" UI ON RDG."userNo" = UI."userNo"
+        JOIN "datingGuideCate" DGC ON RDG."category" = DGC."cateId"
+        WHERE RDG.rank &lt;= 5
+        AND UI."imageProfile" = 'T'
+        ORDER BY RDG."category", RDG."heart" DESC
+    </select>
+
+    <!-- 카테고리 테이블 조회 -->
+    <select id="selectDatingGuideCate" resultType="com.pingo.entity.community.DatingGuideCate">
+        SELECT * FROM "datingGuideCate"
+    </select>
+
+    <!-- 개별 DatingGuide 정렬로 조회 -->
+    <select id="selectDatingGuideWithSort" parameterType="map" resultType="com.pingo.dto.community.DatingGuideDTO">
+        SELECT * FROM
+        (
+            SELECT DG."dgNo", DG."title", DG."contents", DG."thumb", DG."userNo", DG."heart", DG."regDate",
+            DGC."cateName" ,DG."category" AS "cateNo", US."userName", UI."imageUrl"
+            FROM "datingGuide" DG
+            JOIN "users" US ON DG."userNo" = US."userNo"
+            JOIN "userImage" UI ON US."userNo" = UI."userNo"
+            JOIN "datingGuideCate" DGC ON DG."category" = DGC."cateId"
+            WHERE DG."category" = #{cate}
+            AND UI."imageProfile" = 'T'
+            <trim prefix="ORDER BY" prefixOverrides=",">
+                <if test="sort.equals('popular')">
+                    DG."heart" DESC
+                </if>
+                <if test="sort.equals('newest')">
+                    DG."regDate" DESC
+                </if>
+                <if test="sort == null or sort == ''">
+                    DG."heart" DESC
+                </if>
+            </trim>
+        )
+        WHERE ROWNUM &lt;= 5
+    </select>
+
+    <!-- DatingGuide 작성 -->
+    <insert id="insertDatingGuide" parameterType="com.pingo.entity.community.DatingGuide">
+        INSERT INTO "datingGuide" ("dgNo", "title", "contents", "thumb", "category", "userNo", "heart", "regDate")
+        VALUES (#{dgNo}, #{title}, #{contents}, #{thumb}, #{category}, #{userNo}, 0, SYSDATE)
+    </insert>
+
+    <select id="selectDatingGuideHeart" parameterType="map" resultType="string">
+        SELECT "dgNoStr" FROM "datingGuideHeart"
+        WHERE "userNo" = #{userNo}
+    </select>
+
+    <update id="decreaseHeart" parameterType="map">
+        UPDATE "datingGuide" SET "heart" = "heart" - 1
+        WHERE "dgNo" = #{dgNo}
+    </update>
+
+    <update id="increaseHeart" parameterType="map">
+        UPDATE "datingGuide" SET "heart" = "heart" + 1
+        WHERE "dgNo" = #{dgNo}
+    </update>
+
+    <delete id="deleteDatingGuideHeart" parameterType="map">
+        DELETE FROM "datingGuideHeart" WHERE "userNo" = #{userNo}
+    </delete>
+
+    <select id="updateDatingGuideHeart" parameterType="map">
+        UPDATE "datingGuideHeart" SET "dgNoStr" = #{dgNoStr}
+        WHERE "userNo" = #{userNo}
+    </select>
+
+    <select id="insertDatingGuideHeart" parameterType="map">
+        INSERT INTO "datingGuideHeart" ("userNo", "dgNoStr") VALUES (#{userNo}, #{dgNoStr})
+    </select>
+</mapper>
+

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.pingo.mapper.MembershipMapper">
+    <!-- 유저 멤버쉽 조회 -->
+    <select id="selectUserMembership" resultType="com.pingo.entity.membership.UserMembership">
+        SELECT * FROM "userMembership"
+        WHERE "userNo" = #{userNo}
+        AND "expDate" >= CURRENT_DATE
+    </select>
+
+    <!-- 멤버쉽 테이블 조회 -->
+    <select id="selectMembership" resultType="com.pingo.entity.membership.Membership">
+        SELECT * FROM "membership"
+        ORDER BY "msNo" ASC
+    </select>
+
+    <!-- 멤버쉽 등록 -->
+    <insert id="insertUserMembership" parameterType="com.pingo.entity.membership.UserMembership">
+        INSERT INTO "userMembership" ("umNo", "userNo", "msNo", "payDate", "expDate", "state")
+        VALUES (#{umNo}, #{userNo}, #{msNo}, #{payDate}, #{expDate}, #{state})
+    </insert>
+</mapper>

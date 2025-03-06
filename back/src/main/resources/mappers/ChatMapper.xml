@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.pingo.mapper.ChatMapper">
+    <select id="selectChatUser" parameterType="String" resultType="com.pingo.dto.chat.ChatUserDTO">
+        SELECT cu."userNo", cu."roomId", ui."imageUrl", us."userName"
+        FROM "chatUser" cu
+        JOIN "userImage" ui
+        ON cu."userNo" = ui."userNo"
+        JOIN "users" us
+        ON cu."userNo" = us."userNo"
+        WHERE "roomId" IN
+        (
+            SELECT "roomId"
+            FROM "chatUser"
+            WHERE "userNo" = #{userNo}
+        )
+        AND ui."imageProfile" = 'T'
+    </select>
+
+    <select id="selectChatUserList" parameterType="String" resultType="com.pingo.dto.chat.ChatUserListDTO">
+        SELECT "userNo", "roomId"
+        FROM "chatUser"
+        WHERE "roomId" IN
+        (
+            SELECT "roomId"
+            FROM "chatUser"
+            WHERE "userNo" = #{userNo}
+        )
+    </select>
+
+    <insert id="insertChatRoom" parameterType="com.pingo.entity.chat.ChatRoom">
+        INSERT INTO "chatRoom" ("roomId", "roomStatus")
+        VALUES (#{roomId}, #{roomStatus})
+    </insert>
+
+    <insert id="insertChatUser" parameterType="com.pingo.entity.chat.ChatUser">
+        INSERT INTO "chatUser" ("CUId", "userNo", "roomId")
+        VALUES (#{CUId}, #{userNo}, #{roomId})
+    </insert>
+</mapper>

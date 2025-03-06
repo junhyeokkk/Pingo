@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.pingo.mapper.MatchingMapper">
+
+    <!-- 매칭 테이블 삽입  -->
+    <insert id="insertMatching" parameterType="com.pingo.entity.match.Matching">
+        INSERT INTO "matching" ("matchNo", "userANo", "userBNo", "matchingTime")
+        VALUES (#{matchNo}, #{userANo}, #{userBNo}, #{matchingTime})
+    </insert>
+
+</mapper>

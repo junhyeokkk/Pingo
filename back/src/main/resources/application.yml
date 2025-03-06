@@ -1,0 +1,85 @@
+spring:
+  application:
+    name: pingo_back
+
+  devtools:
+    livereload:
+      enabled: true
+    restart:
+      enabled: false
+
+  datasource:
+    url: jdbc:oracle:thin:@13.125.102.57:1521/XE
+    username: pingo
+    password: Qwer1234
+    driver-class-name: oracle.jdbc.OracleDriver
+  kafka:
+    bootstrap-servers: 15.164.166.75:9092  # EC2 Kafka 브로커 주소
+    producer:
+      retries: 3  # 실패 시 최대 3번 재시도 (네트워크 불안정 대비)
+      acks: all   # 모든 리더가 메시지를 받아야 성공 처리 (데이터 손실 방지)
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
+      group-id: swipe-consumer-group-v2
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      auto-offset-reset: earliest  # 처음부터 읽기 (latest로 변경 가능)
+      enable-auto-commit: false    # 자동 커밋 비활성화 (수동으로 메시지 확인)
+      max-poll-records: 10         # 한 번에 가져올 최대 메시지 수 (조절 가능)
+    listener:
+      ack-mode: manual_immediate  # 수동 확인 모드 (메시지 손실 방지)
+  data:
+    redis:
+      host: 13.125.102.57  # AWS Redis 컨테이너 IP 주소
+      port: 6379
+      timeout: 6000  # 타임아웃 (밀리초)
+      lettuce:
+        pool:
+          max-active: 10  # 최대 연결 개수
+          max-idle: 5  # 최대 유휴 연결 개수
+          min-idle: 2  # 최소 유휴 연결 개수
+          max-wait: 5000  # 최대 대기 시간 (밀리초)
+
+    mongodb:
+      host: 13.125.102.57
+      port: 27017
+      database: pingochat
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: pingo250120@gmail.com
+    password: mxpc darg qkia mnpe
+    properties:
+      mail:
+        smtp:
+          starttls:
+            enable: true
+          auth: true
+
+server:
+  address: 0.0.0.0
+  port: 8080
+  servlet:
+    context-path: /pingo
+
+logging:
+  level:
+    root: INFO
+    com.pingo.mapper: DEBUG
+
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+mybatis:
+  mapper-locations: classpath:mappers/**/*.xml
+
+# 파일 업로드 설정
+file:
+  upload:
+    path: uploads/
+
+jwt:
+  issuer: animetalesshop@gmail.com
+  secret: IXFv859htG2PL5Bta8r0QHwvIhRh7x5m

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.pingo.mapper.LocationMapper">
+
+    <!-- 기존 사용자 위치 조회 -->
+    <select id="getUserLocation" resultType="com.pingo.entity.users.Userlocation">
+        SELECT USERNO, latitude, longitude
+        FROM user_locations
+        WHERE USERNO = #{userNo}
+    </select>
+
+    <!-- 유저 위치 저장 (있으면 UPDATE, 없으면 INSERT) -->
+    <update id="updateUserLocation">
+        MERGE INTO user_locations ul
+        USING (
+            SELECT #{userNo} AS userNo, #{latitude} AS latitude, #{longitude} AS longitude FROM dual
+        ) dummy
+        ON (ul.userNo = dummy.userNo)
+        WHEN MATCHED THEN
+            UPDATE SET ul.latitude = dummy.latitude, ul.longitude = dummy.longitude
+        WHEN NOT MATCHED THEN
+            INSERT (userNo, latitude, longitude)
+            VALUES (dummy.userNo, dummy.latitude, dummy.longitude)
+    </update>
+
+    <!--근처 유저 조회-->
+    <select id="findNearbyUsers"  resultType="com.pingo.dto.profile.MainProfileResponseDTO">
+        WITH TARGET_USER AS (
+            SELECT LOCATION
+            FROM "USER_LOCATIONS"
+            WHERE "USERNO" = #{userNo}
+        ),
+        DISTANCES AS (
+            SELECT
+                "a"."USERNO",
+                SDO_GEOM.SDO_DISTANCE(
+                "a".LOCATION,
+                SDO_GEOMETRY(2001, 4326, SDO_POINT_TYPE(-122.084, 37.421998, NULL), NULL, NULL),
+                0.005
+            ) AS "DISTANCE"
+            FROM "USER_LOCATIONS" "a"
+        )
+        SELECT
+            "u"."userNo",
+            "u"."userName",
+            "ui"."userBirth",
+            '접속중' "status",
+                TO_CHAR("DIST"."DISTANCE", 'FM990.00') || ' km' AS "distance",
+                    (SELECT COALESCE(LISTAGG("img"."imageUrl", ',') WITHIN GROUP (ORDER BY "img"."imageUrl"), '')
+                    FROM "userImage" "img"
+                WHERE "img"."userNo" = "u"."userNo") AS "images"
+        FROM "DISTANCES" "DIST"
+        JOIN "users" "u" ON "DIST"."USERNO" = "u"."userNo"
+        JOIN "userInfo" "ui" ON "u"."userNo" = "ui"."userNo"
+        JOIN "USER_LOCATIONS" "ul" ON "u"."userNo" = "ul"."USERNO"
+        JOIN TARGET_USER TU ON 1=1
+        WHERE SDO_WITHIN_DISTANCE("ul"."LOCATION", "TU"."LOCATION", 'distance=${distanceKm} unit=KM') = 'TRUE'
+        AND "DIST"."USERNO" != #{userNo}
+        AND "u"."userGender" !=
+            (SELECT "userGender" FROM "users" WHERE "userNo" = #{userNo})
+        AND "u"."userState" = 'OK'
+        AND "u"."userRole" = 'USER'
+        AND NOT EXISTS (
+            SELECT 1 FROM "userBlock" "ub"
+            WHERE "ub"."fromUserNo" = #{userNo}
+            AND "ub"."toUserNo" = "DIST"."USERNO"
+        )
+        AND NOT EXISTS (
+            SELECT 1 FROM "swipe" "s"
+            WHERE "s"."fromUserNo" = #{userNo}
+            AND "s"."toUserNo" = "DIST"."USERNO"
+            AND "s"."swipeType" = 'PANG'
+        )
+        AND NOT EXISTS (
+            SELECT 1 FROM "matchMapper" "mm"
+            JOIN "matching" "m" ON "mm"."matchNo" = "m"."matchNo"
+            WHERE "mm"."userNo" =#{userNo}
+            AND "m"."matchState" = 'ACTIVE'
+            AND "mm"."matchUserNo" = "DIST"."USERNO"
+        )
+        GROUP BY "u"."userNo", "u"."userName", "ui"."userBirth", "DIST"."DISTANCE"
+        ORDER BY "DIST"."DISTANCE" ASC
+    </select>
+
+</mapper>

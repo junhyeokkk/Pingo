@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.pingo.mapper.KeywordMapper">
+
+    <select id="selectKeywordListFor2ndCategory" parameterType="map" resultType="com.pingo.entity.keywords.Keyword">
+        SELECT * FROM "keyword"
+        START WITH "kwParentId" IS NULL
+        CONNECT BY PRIOR "kwId" = "kwParentId"
+        AND LEVEL = 2
+        ORDER BY "kwId" ASC
+    </select>
+
+    <select id="selectChildKeyword" parameterType="map" resultType="string">
+        SELECT "kwId" FROM "keyword"
+        WHERE "kwParentId" = #{kwParentId}
+    </select>
+
+    <select id="selectUserKeyword" parameterType="map" resultType="com.pingo.entity.users.UserKeyword">
+        SELECT * FROM "userKeyword"
+        WHERE "userNo" = #{userNo}
+    </select>
+
+    <select id="selectMultiUserKeyword" parameterType="map" resultType="com.pingo.entity.users.UserKeyword">
+        SELECT * FROM "userKeyword"
+        WHERE "userNo" IN
+        <foreach collection="userNos" item="userNo" open="(" separator="," close=")">
+            #{userNo}
+        </foreach>
+    </select>
+
+    <insert id="insertUserKeywordForSignUp" parameterType="map">
+        INSERT INTO "userKeyword" ("userNo", "my", "favorite") VALUES (#{userNo}, #{userMyKeyword}, #{userFavoriteKeyword})
+    </insert>
+
+</mapper>

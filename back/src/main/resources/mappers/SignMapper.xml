@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.pingo.mapper.SignMapper">
+    <!-- 사용자 정보 조회 -->
+    <select id="findByUserIdForSignIn" parameterType="string" resultType="com.pingo.entity.users.Users">
+        SELECT *
+        FROM "users"
+        WHERE "userId" = #{userId}
+    </select>
+
+    <!-- 아이디 중복 체크 -->
+    <select id="selectUserIdForValidateId" parameterType="string" resultType="int" useCache="false">
+        SELECT COUNT(*) FROM "users" WHERE "userId" = #{inputId}
+    </select>
+
+    <!-- 아이디 중복 체크 -->
+    <select id="selectUserNickForValidateNick" parameterType="string" resultType="int" useCache="false">
+        SELECT COUNT(*) FROM "users" WHERE "userNick" = #{inputNick}
+    </select>
+
+    <!-- 성향 3차 키워드 조회 -->
+    <select id="select3ndKeyword" resultType="com.pingo.entity.keywords.Keyword" useCache="false">
+        SELECT * FROM "keyword" WHERE "kwLevel" = 3 ORDER BY "kwName" ASC
+    </select>
+
+    <!--  회원가입을 위한 유저 정보 삽입  -->
+    <insert id="insertUserForSignUp" parameterType="com.pingo.entity.users.Users">
+
+        INSERT INTO "users" ("userNo", "userId", "userPw", "userName", "userNick", "userGender", "userState", "userrDate", "userRole")
+        VALUES (#{userNo}, #{userId}, #{userPw}, #{userName}, #{userNick}, #{userGender}, #{userState}, #{userrDate}, #{userRole})
+
+    </insert>
+
+    <!--  회원가입을 위한 유저 상세 정보 삽입  -->
+    <insert id="insertUserInfoForSignUp" parameterType="com.pingo.entity.users.UserInfo">
+
+        INSERT INTO "userInfo" ("userNo", "userBirth", "userHeight", "userAddress", "user1stJob", "user2ndJob", "userReligion", "userDrinking", "userSmoking", "userBloodType")
+        VALUES (#{userNo}, #{userBirth}, #{userHeight}, #{userAddress}, #{user1stJob}, #{user2ndJob}, #{userReligion},
+        #{userDrinking}, #{userSmoking}, #{userBloodType})
+
+    </insert>
+
+    <!--  회원가입을 위한 유저 자기소개 삽입  -->
+    <insert id="insertUserIntroduction" parameterType="map">
+        INSERT INTO "userIntroduction" ("userNo", "introduction") VALUES (#{userNo}, '자기소개를 입력해주세요')
+    </insert>
+
+    <!--  이메일 중복 체크  -->
+    <select id="selectUserEmailForValidateEmail" parameterType="string" resultType="int" useCache="false">
+        SELECT COUNT(*) FROM "users" WHERE "userEmail" = #{userEmail}
+    </select>
+
+</mapper>
