@@ -106,9 +106,8 @@ Pingo 프로젝트는 사용자 주변의 사람들과 프로필을 확인하고
 ---
 
 ## 📬 연락처
-- **이메일:** your.email@example.com
-- **GitHub:** [Pingo Repository](https://github.com/junhyeokkk/Pingo)
-- **LinkedIn:** [Your Profile](https://linkedin.com/in/your-profile)
+- **이메일:** loveu9911111@gmail.com
+- **전화번호:** 010-3450-7418
 
 ---
 
