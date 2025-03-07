@@ -11,6 +11,7 @@ Pingo 프로젝트는 사용자 주변의 사람들과 프로필을 확인하고
 - **팀원:** 박임재, 최준혁, 정지현, 이준석 (총 4명)
 
 - **시연 영상:** [YouTube](https://www.youtube.com/watch?v=b9xO2-tBJ1s)
+- **발표 자료:** (https://www.canva.com/design/DAGglvEUMs8/WOk68xmx20-9XcPX8QR_Ug/edit?utm_content=DAGglvEUMs8&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
 
 ---
 
